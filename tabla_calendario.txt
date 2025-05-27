@@ -1,1 +1,19 @@
-
+let
+    DataMin = #date(2020, 1, 1),
+    DataMax = Date.From(#date(Date.Year(DateTime.LocalNow()),12,31)),
+    QtdDias = Duration.Days(DataMax-DataMin)+1,
+    ListaData = List.Dates(DataMin,QtdDias,#duration(1,0,0,0)),
+    #"Convertida en tabla" = Table.FromList(ListaData, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Columnas con nombre cambiado" = Table.RenameColumns(#"Convertida en tabla",{{"Column1", "Fecha"}}),
+    #"Tipo cambiado" = Table.TransformColumnTypes(#"Columnas con nombre cambiado",{{"Fecha", type date}}),
+    #"Año insertado" = Table.AddColumn(#"Tipo cambiado", "Año", each Date.Year([Fecha]), Int64.Type),
+    #"Personalizada agregada" = Table.AddColumn(#"Año insertado", "Trimestre", each "Q"&Text.From(Date.QuarterOfYear([Fecha]))),
+    #"Mes insertado" = Table.AddColumn(#"Personalizada agregada", "Num Mes", each Date.Month([Fecha]), Int64.Type),
+    #"Nombre del mes insertado" = Table.AddColumn(#"Mes insertado", "Mes", each Text.Proper(Date.MonthName([Fecha], "es-ES")), type text),
+    #"Personalizada agregada1" = Table.AddColumn(#"Nombre del mes insertado", "Mes_Año", each Text.Start([Mes], 3)&"/" & Text.End(Text.From(Date.Year([Fecha])),2)),
+    #"Personalizada agregada2" = Table.AddColumn(#"Personalizada agregada1", "MesAñoOrden", each Text.From(Date.Year([Fecha]))& Text.PadStart(Text.From( Date.Month([Fecha])),2,"0")),
+    #"Tipo cambiado1" = Table.TransformColumnTypes(#"Personalizada agregada2",{{"Mes_Año", type text}, {"Trimestre", type text}, {"MesAñoOrden", Int64.Type}}),
+    #"Personalizada agregada3" = Table.AddColumn(#"Tipo cambiado1", "Dia_Sem", each Text.Upper(
+Date.DayOfWeekName([Fecha])))
+in
+    #"Personalizada agregada3"
